@@ -12,12 +12,6 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development", alias="APP_ENV")
     app_port: int = Field(default=8000, alias="APP_PORT")
 
-    opensearch_host: AnyHttpUrl = Field(default="http://localhost:9200", alias="OPENSEARCH_HOST")
-    opensearch_user: str = Field(default="admin", alias="OPENSEARCH_USER")
-    opensearch_password: str = Field(default="admin", alias="OPENSEARCH_PASSWORD")
-    opensearch_index: str = Field(default="documents", alias="OPENSEARCH_INDEX")
-    opensearch_verify_ssl: bool = Field(default=True, alias="OPENSEARCH_VERIFY_SSL")
-
     timeweb_api_base: AnyHttpUrl = Field(default="https://api.timeweb.cloud", alias="TIMEWEB_API_BASE")
     timeweb_api_token: str = Field(default="dummy-token", alias="TIMEWEB_API_TOKEN")
     timeweb_agent_id: str = Field(default="agent", alias="TIMEWEB_AGENT_ID")
