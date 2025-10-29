@@ -1,6 +1,6 @@
 from __future__ import annotations
-
 import httpx
+from json import JSONDecodeError
 from typing import Any, Dict, List
 
 from app.core.config import get_settings
@@ -42,15 +42,33 @@ class TimewebAgentClient:
         }
 
         url = f"{self._base_url}/api/v1/ai-agents/run"
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, json=payload, headers=headers)
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, json=payload, headers=headers)
+        except Exception as exc:  # noqa: BLE001 - оборачиваем любые ошибки запроса
+            raise TimewebAgentError("Не удалось связаться с TimeWeb AI-Агентом") from exc
+
         if response.status_code >= 400:
             raise TimewebAgentError(
                 f"Ошибка TimeWeb AI-Агента: {response.status_code} {response.text}"
             )
 
-        data = response.json()
-        return data.get("output", {}).get("answer", "")
+        try:
+            data = response.json()
+        except JSONDecodeError as exc:
+            raise TimewebAgentError("Некорректный JSON-ответ TimeWeb AI-Агента") from exc
+
+        try:
+            answer = data["output"]["answer"]
+        except (KeyError, TypeError) as exc:
+            raise TimewebAgentError(
+                "Ответ TimeWeb AI-Агента не содержит поля output.answer"
+            ) from exc
+
+        if not isinstance(answer, str):
+            raise TimewebAgentError("Поле output.answer должно быть строкой")
+
+        return answer
 
 
 def get_timeweb_agent_client() -> TimewebAgentClient:
