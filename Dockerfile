@@ -9,11 +9,12 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml ./
+COPY pyproject.toml setup.cfg README.md ./
+COPY app ./app
+
 RUN pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir -e .
 
-COPY app ./app
 COPY tests ./tests
 
 EXPOSE 8000
