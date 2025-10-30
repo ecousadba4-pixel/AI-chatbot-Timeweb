@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.schemas import ChatRequest, ChatResponse
-from app.core.config import get_settings
-from app.services.timeweb_agent import TimewebAgentError, request_timeweb_answer
+from app.api.dependencies import get_timeweb_agent
+from app.services.timeweb_agent import TimewebAgentClient, TimewebAgentError
 
 router = APIRouter()
 
@@ -17,12 +17,14 @@ def healthcheck() -> dict:
 
 
 @router.post("/chat", response_model=ChatResponse, tags=["chat"])
-async def chat(request: ChatRequest) -> ChatResponse:
+async def chat(
+    request: ChatRequest,
+    agent: TimewebAgentClient = Depends(get_timeweb_agent),
+) -> ChatResponse:
     """Обработка запроса из виджета."""
 
     try:
-        answer = await request_timeweb_answer(
-            settings=get_settings(),
+        answer = await agent.get_answer(
             prompt=request.question,
             context=request.context,
             session_id=request.session_id,

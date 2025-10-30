@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import asyncio
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -11,30 +11,32 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.core.config import Settings
-from app.services import timeweb_agent
+from app.services.timeweb_agent import TimewebAgentClient
 
 
-class _DummyResponse:
-    def __init__(self, payload: dict[str, Any]):
-        self._payload = payload
+@pytest.fixture
+def anyio_backend() -> str:
+    """Используем event loop asyncio для тестов."""
 
-    def raise_for_status(self) -> None:
-        return None
-
-    def json(self) -> dict[str, Any]:
-        return self._payload
+    return "asyncio"
 
 
-def test_request_timeweb_answer_respects_base_path(monkeypatch: pytest.MonkeyPatch) -> None:
+class _RecorderTransport(httpx.MockTransport):
+    """Mock транспорт, сохраняющий тело запроса."""
+
+    def __init__(self, recorder: dict[str, Any]):
+        def _handler(request: httpx.Request) -> httpx.Response:
+            recorder["url"] = str(request.url)
+            recorder["payload"] = json.loads(request.content)
+            return httpx.Response(200, json={"output": {"answer": "ok"}})
+
+        super().__init__(_handler)
+
+
+@pytest.mark.anyio("asyncio")
+async def test_timeweb_agent_client_builds_expected_payload() -> None:
     captured: dict[str, Any] = {}
-
-    async def _dummy_post(self: httpx.AsyncClient, path: str, json: dict[str, Any]) -> _DummyResponse:  # type: ignore[override]
-        captured["path"] = path
-        captured["url"] = str(self.base_url.join(path))
-        captured["payload"] = json
-        return _DummyResponse({"output": {"answer": "ok"}})
-
-    monkeypatch.setattr(httpx.AsyncClient, "post", _dummy_post)
+    transport = _RecorderTransport(captured)
 
     settings = Settings(
         timeweb_api_base="https://example.com/custom/base",
@@ -42,31 +44,23 @@ def test_request_timeweb_answer_respects_base_path(monkeypatch: pytest.MonkeyPat
         timeweb_agent_id="agent",
     )
 
-    async def _run() -> None:
-        answer = await timeweb_agent.request_timeweb_answer(
-            settings=settings,
-            prompt="Привет",
-            context=[],
-            session_id=None,
-        )
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        agent = TimewebAgentClient(settings, http_client)
+        answer = await agent.get_answer(prompt="Привет", context=[], session_id=None)
 
-        assert answer == "ok"
-        assert captured["path"] == "api/v1/ai-agents/run"
-        assert captured["url"] == "https://example.com/custom/base/api/v1/ai-agents/run"
-        assert captured["payload"]["input"]["prompt"] == "Привет"
-        assert "session_id" not in captured["payload"]
-
-    asyncio.run(_run())
+    assert answer == "ok"
+    assert (
+        captured["url"]
+        == "https://example.com/custom/base/api/v1/ai-agents/run"
+    )
+    assert captured["payload"]["input"]["prompt"] == "Привет"
+    assert "session_id" not in captured["payload"]
 
 
-def test_request_timeweb_answer_includes_empty_session_id(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.anyio("asyncio")
+async def test_timeweb_agent_client_keeps_empty_session_id() -> None:
     captured: dict[str, Any] = {}
-
-    async def _dummy_post(self: httpx.AsyncClient, path: str, json: dict[str, Any]) -> _DummyResponse:  # type: ignore[override]
-        captured["payload"] = json
-        return _DummyResponse({"output": {"answer": "ok"}})
-
-    monkeypatch.setattr(httpx.AsyncClient, "post", _dummy_post)
+    transport = _RecorderTransport(captured)
 
     settings = Settings(
         timeweb_api_base="https://example.com/custom/base",
@@ -74,15 +68,13 @@ def test_request_timeweb_answer_includes_empty_session_id(monkeypatch: pytest.Mo
         timeweb_agent_id="agent",
     )
 
-    async def _run() -> None:
-        answer = await timeweb_agent.request_timeweb_answer(
-            settings=settings,
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        agent = TimewebAgentClient(settings, http_client)
+        answer = await agent.get_answer(
             prompt="Привет",
             context=[],
             session_id="",
         )
 
-        assert answer == "ok"
-        assert captured["payload"]["session_id"] == ""
-
-    asyncio.run(_run())
+    assert answer == "ok"
+    assert captured["payload"]["session_id"] == ""
