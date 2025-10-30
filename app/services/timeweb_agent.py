@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from json import JSONDecodeError
-from typing import Any, Callable, Mapping, MutableMapping, Sequence
+from typing import Any, Callable, Mapping, MutableMapping, Protocol, Sequence, cast
 
 import httpx
 
@@ -13,7 +13,15 @@ class TimewebAgentError(RuntimeError):
     """Базовая ошибка взаимодействия с TimeWeb AI-Агентом."""
 
 
-ContextPayload = Sequence[Mapping[str, Any]] | None
+class SupportsModelDump(Protocol):
+    """Протокол для объектов, поддерживающих ``model_dump``."""
+
+    def model_dump(self) -> Mapping[str, Any]:
+        """Возвращает словарь представления объекта."""
+
+
+ContextItem = Mapping[str, Any] | SupportsModelDump
+ContextPayload = Sequence[ContextItem] | None
 
 
 class TimewebAgentClient:
@@ -30,10 +38,15 @@ class TimewebAgentClient:
         self._top_p = settings.timeweb_top_p
         self._client_factory = client_factory or self._default_client_factory
 
-    async def generate_answer(self, prompt: str, context: ContextPayload = None) -> str:
+    async def generate_answer(
+        self,
+        prompt: str,
+        context: ContextPayload = None,
+        session_id: str | None = None,
+    ) -> str:
         """Отправляет запрос агенту и возвращает ответ."""
 
-        payload = self._build_payload(prompt, context)
+        payload = self._build_payload(prompt, context, session_id)
 
         try:
             async with self._client_factory() as client:
@@ -53,10 +66,19 @@ class TimewebAgentClient:
 
         return answer
 
-    def _build_payload(self, prompt: str, context: ContextPayload) -> dict[str, Any]:
-        prepared_context = [dict(item) for item in context] if context else []
+    def _build_payload(
+        self,
+        prompt: str,
+        context: ContextPayload,
+        session_id: str | None,
+    ) -> dict[str, Any]:
+        prepared_context = (
+            [self._serialize_context_item(item) for item in context]
+            if context
+            else []
+        )
 
-        return {
+        payload: dict[str, Any] = {
             "agent_id": self._agent_id,
             "input": {
                 "prompt": prompt,
@@ -67,6 +89,28 @@ class TimewebAgentClient:
                 "top_p": self._top_p,
             },
         }
+
+        if session_id is not None:
+            payload["session_id"] = session_id
+
+        return payload
+
+    @staticmethod
+    def _serialize_context_item(item: ContextItem) -> dict[str, Any]:
+        if isinstance(item, Mapping):
+            return dict(item)
+
+        if hasattr(item, "model_dump"):
+            dumped = cast(Mapping[str, Any], item.model_dump())  # type: ignore[call-arg]
+            if not isinstance(dumped, Mapping):
+                raise TimewebAgentError(
+                    "model_dump() контекста должен возвращать отображение"
+                )
+            return dict(dumped)
+
+        raise TimewebAgentError(
+            "Элементы контекста должны быть словарём или поддерживать model_dump()"
+        )
 
     def _default_client_factory(self) -> httpx.AsyncClient:
         headers: MutableMapping[str, str] = {

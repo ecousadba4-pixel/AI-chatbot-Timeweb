@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 import pytest
+from pydantic import BaseModel
 
 from app.services.timeweb_agent import TimewebAgentClient, TimewebAgentError
 
@@ -40,6 +41,7 @@ class DummyAsyncClient:
     def __init__(self, response: Optional[DummyResponse] = None, error: Optional[Exception] = None) -> None:
         self._response = response
         self._error = error
+        self.last_payload: Optional[Dict[str, Any]] = None
 
     async def __aenter__(self) -> DummyAsyncClient:
         return self
@@ -51,7 +53,13 @@ class DummyAsyncClient:
         if self._error is not None:
             raise self._error
         assert self._response is not None
+        self.last_payload = kwargs.get("json")
         return self._response
+
+
+class DummyMessage(BaseModel):
+    role: str
+    content: str
 
 
 async def test_generate_answer_success(anyio_backend: str) -> None:
@@ -61,6 +69,33 @@ async def test_generate_answer_success(anyio_backend: str) -> None:
     result = await client.generate_answer("?", [])
 
     assert result == "Привет"
+
+
+async def test_generate_answer_includes_session_id(anyio_backend: str) -> None:
+    response = DummyResponse(json_data={"output": {"answer": "Привет"}})
+    dummy_http_client = DummyAsyncClient(response=response)
+    client = TimewebAgentClient(client_factory=lambda: dummy_http_client)
+
+    await client.generate_answer("?", [], session_id="session-123")
+
+    assert dummy_http_client.last_payload is not None
+    assert dummy_http_client.last_payload["session_id"] == "session-123"
+
+
+async def test_generate_answer_serializes_context_models(anyio_backend: str) -> None:
+    response = DummyResponse(json_data={"output": {"answer": "Привет"}})
+    dummy_http_client = DummyAsyncClient(response=response)
+    client = TimewebAgentClient(client_factory=lambda: dummy_http_client)
+
+    context = [DummyMessage(role="system", content="Инструкция"), {"role": "user", "content": "??"}]
+
+    await client.generate_answer("?", context)
+
+    assert dummy_http_client.last_payload is not None
+    assert dummy_http_client.last_payload["input"]["context"] == [
+        {"role": "system", "content": "Инструкция"},
+        {"role": "user", "content": "??"},
+    ]
 
 
 @pytest.mark.parametrize(

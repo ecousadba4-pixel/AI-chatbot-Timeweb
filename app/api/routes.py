@@ -23,7 +23,11 @@ async def chat(
     """Обработка запроса из виджета."""
 
     try:
-        answer = await agent.generate_answer(request.question)
+        answer = await agent.generate_answer(
+            request.question,
+            context=request.context,
+            session_id=request.session_id,
+        )
     except TimewebAgentError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
