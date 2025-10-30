@@ -54,7 +54,7 @@ async def request_timeweb_answer(
         timeout=httpx.Timeout(30.0),
     ) as client:
         try:
-            response = await client.post("/api/v1/ai-agents/run", json=payload)
+            response = await client.post("api/v1/ai-agents/run", json=payload)
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
             raise TimewebAgentError(
