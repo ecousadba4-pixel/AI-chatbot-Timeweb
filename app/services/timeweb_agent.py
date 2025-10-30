@@ -23,7 +23,7 @@ class TimewebAgentClient:
 
     def __init__(self, client_factory: Callable[[], httpx.AsyncClient] | None = None) -> None:
         settings = get_settings()
-        self._base_url = settings.timeweb_api_base.rstrip("/")
+        self._base_url = str(settings.timeweb_api_base).rstrip("/")
         self._token = settings.timeweb_api_token
         self._agent_id = settings.timeweb_agent_id
         self._temperature = settings.timeweb_temperature
