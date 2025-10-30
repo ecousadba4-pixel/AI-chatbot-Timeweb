@@ -311,12 +311,18 @@
           <path d="M14.5 30.8h2.6"></path>
           <path d="M30.4 15.2h2.6"></path>
         </g>
-        <g fill="url(#twbLetterGradient)">
-          <path
-            d="M16.6 32.5h3l1.4-4.2h8.1l1.4 4.2h3l-7-17h-2.9l-7 17Zm5.3-6.9 2.7-6.9 2.7 6.9h-5.4Z"
-          ></path>
-          <path d="M30.6 15.5h2.8v17h-2.8z"></path>
-        </g>
+        <text
+          x="24"
+          y="25.6"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          font-family="'Prata', 'Times New Roman', serif"
+          font-size="16"
+          font-weight="600"
+          fill="url(#twbLetterGradient)"
+        >
+          AI
+        </text>
         <path
           d="M24 11.6c3 0 5.7 1.7 7.1 4.2"
           fill="none"
