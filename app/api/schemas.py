@@ -17,6 +17,10 @@ class ChatRequest(BaseModel):
 
     question: str = Field(description="Вопрос пользователя")
     session_id: Optional[str] = Field(default=None, description="Идентификатор сессии")
+    context: List[ChatMessage] = Field(
+        default_factory=list,
+        description="История сообщений чата, передаваемая агенту",
+    )
 
 
 class ChatResponse(BaseModel):
