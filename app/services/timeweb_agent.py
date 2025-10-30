@@ -42,7 +42,7 @@ async def request_timeweb_answer(
         },
     }
 
-    if session_id:
+    if session_id is not None:
         payload["session_id"] = session_id
 
     async with httpx.AsyncClient(

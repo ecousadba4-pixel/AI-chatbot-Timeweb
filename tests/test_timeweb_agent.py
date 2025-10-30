@@ -57,3 +57,32 @@ def test_request_timeweb_answer_respects_base_path(monkeypatch: pytest.MonkeyPat
         assert "session_id" not in captured["payload"]
 
     asyncio.run(_run())
+
+
+def test_request_timeweb_answer_includes_empty_session_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    async def _dummy_post(self: httpx.AsyncClient, path: str, json: dict[str, Any]) -> _DummyResponse:  # type: ignore[override]
+        captured["payload"] = json
+        return _DummyResponse({"output": {"answer": "ok"}})
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", _dummy_post)
+
+    settings = Settings(
+        timeweb_api_base="https://example.com/custom/base",
+        timeweb_api_token="token",
+        timeweb_agent_id="agent",
+    )
+
+    async def _run() -> None:
+        answer = await timeweb_agent.request_timeweb_answer(
+            settings=settings,
+            prompt="Привет",
+            context=[],
+            session_id="",
+        )
+
+        assert answer == "ok"
+        assert captured["payload"]["session_id"] == ""
+
+    asyncio.run(_run())
