@@ -245,28 +245,62 @@
   widgetBtn.className = 'twb-chatbot-button';
   widgetBtn.setAttribute('aria-label', 'Открыть чат с AI-консьержем');
   widgetBtn.setAttribute('aria-expanded', 'false');
-  widgetBtn.innerHTML =
-    '<span class="twb-chatbot-button-icon" aria-hidden="true">' +
-    '<svg width="44" height="44" viewBox="0 0 44 44" focusable="false" aria-hidden="true">' +
-    '<defs>' +
-    '<linearGradient id="twbBtnGradient" x1="0%" y1="0%" x2="100%" y2="100%">' +
-    '<stop offset="0%" stop-color="#8a9d4c"></stop>' +
-    '<stop offset="100%" stop-color="#6b7c3a"></stop>' +
-    '</linearGradient>' +
-    '<linearGradient id="twbBubbleGradient" x1="15%" y1="10%" x2="85%" y2="90%">' +
-    '<stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"></stop>' +
-    '<stop offset="100%" stop-color="#eef5d1" stop-opacity="0.9"></stop>' +
-    '</linearGradient>' +
-    '</defs>' +
-    '<circle cx="22" cy="22" r="21" fill="url(#twbBtnGradient)"></circle>' +
-    '<circle cx="22" cy="22" r="19" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"></circle>' +
-    '<path d="M31 13.5H17c-3.59 0-6.5 2.91-6.5 6.5v5.3c0 3.59 2.91 6.5 6.5 6.5h3.7l1.84 4.21c.26.59 1.15.59 1.41 0L25.8 31.8H31c3.59 0 6.5-2.91 6.5-6.5v-5.3c0-3.59-2.91-6.5-6.5-6.5Z" fill="url(#twbBubbleGradient)"></path>' +
-    '<path d="M18.8 20.5h10.4" stroke="#6b7c3a" stroke-width="1.6" stroke-linecap="round" opacity="0.75"></path>' +
-    '<path d="M18.8 24.5h6.8" stroke="#6b7c3a" stroke-width="1.6" stroke-linecap="round" opacity="0.65"></path>' +
-    '<circle cx="30.8" cy="16.8" r="2.2" fill="#ffffff" opacity="0.95"></circle>' +
-    '<circle cx="31.9" cy="15.2" r="1.2" fill="#f0f5d8" opacity="0.95"></circle>' +
-    '</svg>' +
-    '</span>';
+  widgetBtn.innerHTML = `
+    <span class="twb-chatbot-button-icon" aria-hidden="true">
+      <svg width="48" height="48" viewBox="0 0 48 48" focusable="false" aria-hidden="true">
+        <defs>
+          <linearGradient id="twbBtnGradient" x1="12%" y1="8%" x2="88%" y2="92%">
+            <stop offset="0%" stop-color="#a6c35c"></stop>
+            <stop offset="48%" stop-color="#7f9a3f"></stop>
+            <stop offset="100%" stop-color="#5c7a2d"></stop>
+          </linearGradient>
+          <radialGradient id="twbInnerGlow" cx="50%" cy="32%" r="64%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"></stop>
+            <stop offset="60%" stop-color="#edf5d8" stop-opacity="0.88"></stop>
+            <stop offset="100%" stop-color="#cbd9a5" stop-opacity="0.65"></stop>
+          </radialGradient>
+          <linearGradient id="twbLetterGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#183214"></stop>
+            <stop offset="100%" stop-color="#2f4d20"></stop>
+          </linearGradient>
+        </defs>
+        <circle cx="24" cy="24" r="23" fill="url(#twbBtnGradient)"></circle>
+        <circle
+          cx="24"
+          cy="24"
+          r="20"
+          fill="url(#twbInnerGlow)"
+          stroke="#ffffff"
+          stroke-opacity="0.35"
+          stroke-width="1.1"
+        ></circle>
+        <path
+          d="M24 6c7.7 0 14 6.3 14 14 0 6.5-4.5 12-10.7 13.6-1.2.3-1.9 1.5-1.6 2.7l.9 3.8c.3 1.4-.6 2.8-2 3.1-.3.1-.6.1-.9.1-.9 0-1.8-.4-2.3-1.2l-2.6-3.9c-.4-.6-1.1-.9-1.8-.8C11.6 37.1 6 30.9 6 23.2 6 14.6 12.9 6 24 6Z"
+          fill="rgba(255, 255, 255, 0.08)"
+        ></path>
+        <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-opacity="0.4">
+          <path d="M11.5 16.5h4.2"></path>
+          <path d="M32.3 33.5h4.2"></path>
+          <path d="M14.5 30.8h2.6"></path>
+          <path d="M30.4 15.2h2.6"></path>
+        </g>
+        <g fill="url(#twbLetterGradient)">
+          <path
+            d="M16.6 32.5h3l1.4-4.2h8.1l1.4 4.2h3l-7-17h-2.9l-7 17Zm5.3-6.9 2.7-6.9 2.7 6.9h-5.4Z"
+          ></path>
+          <path d="M30.6 15.5h2.8v17h-2.8z"></path>
+        </g>
+        <path
+          d="M24 11.6c3 0 5.7 1.7 7.1 4.2"
+          fill="none"
+          stroke="#f5ffe7"
+          stroke-opacity="0.65"
+          stroke-width="1.2"
+          stroke-linecap="round"
+        ></path>
+      </svg>
+    </span>
+  `;
 
   const widgetBox = document.createElement('div');
   widgetBox.className = 'twb-chatbot-box';
