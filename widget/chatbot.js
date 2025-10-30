@@ -247,15 +247,24 @@
   widgetBtn.setAttribute('aria-expanded', 'false');
   widgetBtn.innerHTML =
     '<span class="twb-chatbot-button-icon" aria-hidden="true">' +
-    '<svg width="36" height="36" viewBox="0 0 36 36" focusable="false">' +
+    '<svg width="44" height="44" viewBox="0 0 44 44" focusable="false" aria-hidden="true">' +
     '<defs>' +
     '<linearGradient id="twbBtnGradient" x1="0%" y1="0%" x2="100%" y2="100%">' +
     '<stop offset="0%" stop-color="#8a9d4c"></stop>' +
     '<stop offset="100%" stop-color="#6b7c3a"></stop>' +
     '</linearGradient>' +
+    '<linearGradient id="twbBubbleGradient" x1="15%" y1="10%" x2="85%" y2="90%">' +
+    '<stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"></stop>' +
+    '<stop offset="100%" stop-color="#eef5d1" stop-opacity="0.9"></stop>' +
+    '</linearGradient>' +
     '</defs>' +
-    '<circle cx="18" cy="18" r="17" fill="url(#twbBtnGradient)"></circle>' +
-    '<text x="18" y="26" text-anchor="middle" font-family="Prata, serif" font-size="20" fill="#fff" font-weight="700">AI</text>' +
+    '<circle cx="22" cy="22" r="21" fill="url(#twbBtnGradient)"></circle>' +
+    '<circle cx="22" cy="22" r="19" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"></circle>' +
+    '<path d="M31 13.5H17c-3.59 0-6.5 2.91-6.5 6.5v5.3c0 3.59 2.91 6.5 6.5 6.5h3.7l1.84 4.21c.26.59 1.15.59 1.41 0L25.8 31.8H31c3.59 0 6.5-2.91 6.5-6.5v-5.3c0-3.59-2.91-6.5-6.5-6.5Z" fill="url(#twbBubbleGradient)"></path>' +
+    '<path d="M18.8 20.5h10.4" stroke="#6b7c3a" stroke-width="1.6" stroke-linecap="round" opacity="0.75"></path>' +
+    '<path d="M18.8 24.5h6.8" stroke="#6b7c3a" stroke-width="1.6" stroke-linecap="round" opacity="0.65"></path>' +
+    '<circle cx="30.8" cy="16.8" r="2.2" fill="#ffffff" opacity="0.95"></circle>' +
+    '<circle cx="31.9" cy="15.2" r="1.2" fill="#f0f5d8" opacity="0.95"></circle>' +
     '</svg>' +
     '</span>';
 
