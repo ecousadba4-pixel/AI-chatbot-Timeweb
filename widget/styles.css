@@ -11,8 +11,8 @@ body {
 
 .twb-chatbot-button {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: 24px;
+  bottom: 24px;
   width: 60px;
   height: 60px;
   border: none;
@@ -22,7 +22,7 @@ body {
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  z-index: 100000;
+  z-index: 2147483000;
 }
 
 .twb-chatbot-button:focus {
@@ -47,20 +47,20 @@ body {
 
 .twb-chatbot-box {
   position: fixed;
-  right: 20px;
-  bottom: 88px;
-  width: 350px;
-  max-width: calc(100vw - 40px);
-  height: 460px;
-  max-height: 70vh;
+  right: 24px;
+  bottom: 96px;
+  width: 360px;
+  max-width: calc(100vw - 48px);
+  height: 520px;
+  max-height: 75vh;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 40px rgba(138, 157, 76, 0.25);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(138, 157, 76, 0.25);
   display: none;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #eeeeee;
-  z-index: 99999;
+  border: 1px solid #e6ead9;
+  z-index: 2147482999;
   color: #252a20;
 }
 
@@ -71,7 +71,7 @@ body {
 .twb-chatbot-header {
   background: linear-gradient(135deg, #8a9d4c, #6b7c3a);
   padding: 18px 50px 18px 20px;
-  border-radius: 16px 16px 0 0;
+  border-radius: 18px 18px 0 0;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -229,9 +229,9 @@ body {
   }
 
   .twb-chatbot-box {
-    right: 10px;
-    left: 10px;
-    bottom: 10px;
+    right: 16px;
+    left: 16px;
+    bottom: 16px;
     width: auto;
     height: 60vh;
     max-height: 60vh;
