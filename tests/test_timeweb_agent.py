@@ -23,6 +23,11 @@ class DummyResponse:
         self._json_data = json_data
         self.text = text
 
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            request = httpx.Request("POST", "http://testserver")
+            raise httpx.HTTPStatusError("error", request=request, response=self)
+
     def json(self) -> Dict[str, Any]:
         if isinstance(self._json_data, Exception):
             raise self._json_data
@@ -49,16 +54,10 @@ class DummyAsyncClient:
         return self._response
 
 
-def patch_async_client(monkeypatch: pytest.MonkeyPatch, *, response: Optional[DummyResponse] = None, error: Optional[Exception] = None) -> None:
-    dummy = DummyAsyncClient(response=response, error=error)
-    monkeypatch.setattr(httpx, "AsyncClient", lambda *args, **kwargs: dummy)
-
-
-async def test_generate_answer_success(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_generate_answer_success(anyio_backend: str) -> None:
     response = DummyResponse(json_data={"output": {"answer": "Привет"}})
-    patch_async_client(monkeypatch, response=response)
+    client = TimewebAgentClient(client_factory=lambda: DummyAsyncClient(response=response))
 
-    client = TimewebAgentClient()
     result = await client.generate_answer("?", [])
 
     assert result == "Привет"
@@ -78,10 +77,10 @@ async def test_generate_answer_success(monkeypatch: pytest.MonkeyPatch) -> None:
         (DummyResponse(json_data={"output": {"answer": 123}}), "Поле output.answer должно быть строкой"),
     ],
 )
-async def test_generate_answer_invalid_response(monkeypatch: pytest.MonkeyPatch, response: DummyResponse, expected_message: str) -> None:
-    patch_async_client(monkeypatch, response=response)
-
-    client = TimewebAgentClient()
+async def test_generate_answer_invalid_response(
+    anyio_backend: str, response: DummyResponse, expected_message: str
+) -> None:
+    client = TimewebAgentClient(client_factory=lambda: DummyAsyncClient(response=response))
 
     with pytest.raises(TimewebAgentError) as exc:
         await client.generate_answer("?", [])
@@ -89,13 +88,11 @@ async def test_generate_answer_invalid_response(monkeypatch: pytest.MonkeyPatch,
     assert expected_message in str(exc.value)
 
 
-async def test_generate_answer_network_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    class DummyHttpError(Exception):
+async def test_generate_answer_network_error(anyio_backend: str) -> None:
+    class DummyHttpError(httpx.HTTPError):
         pass
 
-    patch_async_client(monkeypatch, error=DummyHttpError("fail"))
-
-    client = TimewebAgentClient()
+    client = TimewebAgentClient(client_factory=lambda: DummyAsyncClient(error=DummyHttpError("fail")))
 
     with pytest.raises(TimewebAgentError) as exc:
         await client.generate_answer("?", [])

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.schemas import ChatRequest, ChatResponse
@@ -24,15 +22,12 @@ async def chat(
 ) -> ChatResponse:
     """Обработка запроса из виджета."""
 
-    documents: List[dict] = []
-    context_blocks: List[str] = []
-
     try:
-        answer = await agent.generate_answer(request.question, documents)
+        answer = await agent.generate_answer(request.question)
     except TimewebAgentError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         ) from exc
 
-    return ChatResponse(answer=answer, context=context_blocks)
+    return ChatResponse(answer=answer)
