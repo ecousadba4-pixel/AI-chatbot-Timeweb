@@ -1,155 +1,78 @@
+"""Упрощённый клиент для обращения к Timeweb AI-Agent."""
+
 from __future__ import annotations
 
-from functools import lru_cache
-from json import JSONDecodeError
-from typing import Any, Callable, Mapping, MutableMapping, Protocol, Sequence, cast
+from typing import Any, Iterable, Mapping
 
 import httpx
 
-from app.core.config import get_settings
+from app.core.config import Settings
 
 
 class TimewebAgentError(RuntimeError):
-    """Базовая ошибка взаимодействия с TimeWeb AI-Агентом."""
+    """Общее исключение для ошибок при запросе к агенту."""
 
 
-class SupportsModelDump(Protocol):
-    """Протокол для объектов, поддерживающих ``model_dump``."""
+def _normalize_context(context: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Подготавливает контекст в формате, который ожидает API агента."""
 
-    def model_dump(self) -> Mapping[str, Any]:
-        """Возвращает словарь представления объекта."""
+    normalized: list[dict[str, Any]] = []
+
+    for item in context:
+        normalized.append(dict(item))
+
+    return normalized
 
 
-ContextItem = Mapping[str, Any] | SupportsModelDump
-ContextPayload = Sequence[ContextItem] | None
+async def request_timeweb_answer(
+    *,
+    settings: Settings,
+    prompt: str,
+    context: Iterable[Mapping[str, Any]],
+    session_id: str | None,
+) -> str:
+    """Отправляет запрос к Timeweb AI-Agent и возвращает ответ."""
 
+    payload: dict[str, Any] = {
+        "agent_id": settings.timeweb_agent_id,
+        "input": {"prompt": prompt, "context": _normalize_context(context)},
+        "generation_config": {
+            "temperature": settings.timeweb_temperature,
+            "top_p": settings.timeweb_top_p,
+        },
+    }
 
-class TimewebAgentClient:
-    """Клиент для вызова TimeWeb AI-Агента."""
+    if session_id:
+        payload["session_id"] = session_id
 
-    _ENDPOINT = "/api/v1/ai-agents/run"
-
-    def __init__(self, client_factory: Callable[[], httpx.AsyncClient] | None = None) -> None:
-        settings = get_settings()
-        self._base_url = settings.timeweb_api_base
-        self._token = settings.timeweb_api_token
-        self._agent_id = settings.timeweb_agent_id
-        self._temperature = settings.timeweb_temperature
-        self._top_p = settings.timeweb_top_p
-        self._client_factory = client_factory or self._default_client_factory
-
-    async def generate_answer(
-        self,
-        prompt: str,
-        context: ContextPayload = None,
-        session_id: str | None = None,
-    ) -> str:
-        """Отправляет запрос агенту и возвращает ответ."""
-
-        payload = self._build_payload(prompt, context, session_id)
-
+    async with httpx.AsyncClient(
+        base_url=settings.timeweb_api_base,
+        headers={
+            "Authorization": f"Bearer {settings.timeweb_api_token}",
+            "Content-Type": "application/json",
+        },
+        timeout=httpx.Timeout(30.0),
+    ) as client:
         try:
-            async with self._client_factory() as client:
-                response = await client.post(self._ENDPOINT, json=payload)
-                response.raise_for_status()
+            response = await client.post("/api/v1/ai-agents/run", json=payload)
+            response.raise_for_status()
         except httpx.HTTPStatusError as exc:
-            status_code = exc.response.status_code
-            detail = exc.response.text
             raise TimewebAgentError(
-                f"Ошибка TimeWeb AI-Агента: {status_code} {detail}"
+                f"Timeweb агент вернул ошибку {exc.response.status_code}: {exc.response.text}"
             ) from exc
         except httpx.HTTPError as exc:
-            raise TimewebAgentError("Не удалось связаться с TimeWeb AI-Агентом") from exc
+            raise TimewebAgentError("Не удалось связаться с Timeweb агентом") from exc
 
-        data = self._parse_response(response)
-        answer = self._extract_answer(data)
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise TimewebAgentError("Некорректный JSON от Timeweb агента") from exc
+    try:
+        answer = data["output"]["answer"]
+    except (KeyError, TypeError) as exc:
+        raise TimewebAgentError("Ответ Timeweb агента не содержит output.answer") from exc
 
-        return answer
+    if not isinstance(answer, str):
+        raise TimewebAgentError("Поле output.answer должно быть строкой")
 
-    def _build_payload(
-        self,
-        prompt: str,
-        context: ContextPayload,
-        session_id: str | None,
-    ) -> dict[str, Any]:
-        prepared_context = (
-            [self._serialize_context_item(item) for item in context]
-            if context
-            else []
-        )
-
-        payload: dict[str, Any] = {
-            "agent_id": self._agent_id,
-            "input": {
-                "prompt": prompt,
-                "context": prepared_context,
-            },
-            "generation_config": {
-                "temperature": self._temperature,
-                "top_p": self._top_p,
-            },
-        }
-
-        if session_id is not None:
-            payload["session_id"] = session_id
-
-        return payload
-
-    @staticmethod
-    def _serialize_context_item(item: ContextItem) -> dict[str, Any]:
-        if isinstance(item, Mapping):
-            return dict(item)
-
-        if hasattr(item, "model_dump"):
-            dumped = cast(Mapping[str, Any], item.model_dump())  # type: ignore[call-arg]
-            if not isinstance(dumped, Mapping):
-                raise TimewebAgentError(
-                    "model_dump() контекста должен возвращать отображение"
-                )
-            return dict(dumped)
-
-        raise TimewebAgentError(
-            "Элементы контекста должны быть словарём или поддерживать model_dump()"
-        )
-
-    def _default_client_factory(self) -> httpx.AsyncClient:
-        headers: MutableMapping[str, str] = {
-            "Authorization": f"Bearer {self._token}",
-            "Content-Type": "application/json",
-        }
-
-        return httpx.AsyncClient(
-            base_url=self._base_url,
-            headers=headers,
-            timeout=httpx.Timeout(30.0),
-        )
-
-    def _parse_response(self, response: httpx.Response) -> dict[str, Any]:
-        try:
-            return response.json()
-        except (JSONDecodeError, ValueError) as exc:
-            raise TimewebAgentError("Некорректный JSON-ответ TimeWeb AI-Агента") from exc
-
-    def _extract_answer(self, data: Mapping[str, Any]) -> str:
-        try:
-            answer = data["output"]["answer"]
-        except (KeyError, TypeError) as exc:
-            raise TimewebAgentError(
-                "Ответ TimeWeb AI-Агента не содержит поля output.answer"
-            ) from exc
-
-        if not isinstance(answer, str):
-            raise TimewebAgentError("Поле output.answer должно быть строкой")
-
-        return answer
-
-
-@lru_cache
-def _cached_timeweb_agent_client() -> TimewebAgentClient:
-    return TimewebAgentClient()
-
-
-def get_timeweb_agent_client() -> TimewebAgentClient:
-    """Возвращает экземпляр клиента TimeWeb AI-Агента."""
-
-    return _cached_timeweb_agent_client()
+    return answer
