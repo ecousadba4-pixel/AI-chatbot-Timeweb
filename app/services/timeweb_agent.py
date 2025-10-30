@@ -55,7 +55,7 @@ class TimewebAgentClient:
 
         try:
             data = response.json()
-        except JSONDecodeError as exc:
+        except (JSONDecodeError, ValueError) as exc:
             raise TimewebAgentError("Некорректный JSON-ответ TimeWeb AI-Агента") from exc
 
         try:
