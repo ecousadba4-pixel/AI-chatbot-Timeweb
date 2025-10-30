@@ -8,6 +8,238 @@
     return;
   }
 
+  const styleId = 'twb-chatbot-style';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      .twb-chatbot-button {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        width: 60px;
+        height: 60px;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        z-index: 2147483000;
+      }
+
+      .twb-chatbot-button:focus {
+        outline: 2px solid #c9d99a;
+        outline-offset: 3px;
+      }
+
+      .twb-chatbot-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+      }
+
+      .twb-chatbot-button-hidden {
+        display: none !important;
+      }
+
+      .twb-chatbot-box {
+        position: fixed;
+        right: 24px;
+        bottom: 96px;
+        width: 360px;
+        max-width: calc(100vw - 48px);
+        height: 520px;
+        max-height: 75vh;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 12px 40px rgba(138, 157, 76, 0.25);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid #e6ead9;
+        z-index: 2147482999;
+        color: #252a20;
+        font-family: 'Open Sans', Arial, sans-serif;
+      }
+
+      .twb-chatbot-box-visible {
+        display: flex;
+      }
+
+      .twb-chatbot-header {
+        background: linear-gradient(135deg, #8a9d4c, #6b7c3a);
+        padding: 18px 50px 18px 20px;
+        border-radius: 18px 18px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+      }
+
+      .twb-chatbot-header-text {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .twb-chatbot-title {
+        font-family: 'Prata', serif;
+        font-size: 22px;
+        color: #ffffff;
+        display: block;
+      }
+
+      .twb-chatbot-subtitle {
+        font-size: 11px;
+        color: #f0f7e0;
+        display: block;
+        margin-top: -2px;
+      }
+
+      .twb-chatbot-close {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: none;
+        color: #ffffff;
+        font-size: 24px;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .twb-chatbot-close:focus {
+        outline: 2px solid #f3f9d8;
+        border-radius: 50%;
+      }
+
+      .twb-chatbot-history {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        font-size: 15px;
+        line-height: 1.6;
+        background: #fafcf8;
+      }
+
+      .twb-chatbot-history::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .twb-chatbot-history::-webkit-scrollbar-thumb {
+        background: rgba(107, 124, 58, 0.4);
+        border-radius: 4px;
+      }
+
+      .twb-chatbot-placeholder {
+        text-align: center;
+        color: #6b7c3a;
+        font-size: 13px;
+        padding: 20px;
+        font-style: italic;
+      }
+
+      .twb-chatbot-message {
+        margin-bottom: 12px;
+        display: flex;
+        width: 100%;
+      }
+
+      .twb-chatbot-message span {
+        display: inline-block;
+        padding: 12px 16px;
+        border-radius: 16px;
+        max-width: 85%;
+        word-wrap: break-word;
+        background: #f6f8f0;
+        color: #355825;
+      }
+
+      .twb-chatbot-user {
+        justify-content: flex-end;
+      }
+
+      .twb-chatbot-user span {
+        background: #ecf1e7;
+        border-radius: 16px 16px 4px 16px;
+      }
+
+      .twb-chatbot-agent span {
+        border-radius: 16px 16px 16px 4px;
+      }
+
+      .twb-chatbot-typing span {
+        background: #f0f3ea;
+        color: #6b7c3a;
+        font-style: italic;
+      }
+
+      .twb-chatbot-error span {
+        background: #fbecec;
+        color: #8a2727;
+        border-radius: 16px 16px 16px 4px;
+      }
+
+      .twb-chatbot-form {
+        display: flex;
+        border-top: 1px solid #e8eeda;
+        background: #f8faf2;
+        min-height: 58px;
+      }
+
+      .twb-chatbot-input {
+        flex: 1;
+        padding: 16px 12px;
+        border: none;
+        background: #f8faf2;
+        font-size: 15px;
+        color: #355825;
+      }
+
+      .twb-chatbot-input:focus {
+        outline: none;
+      }
+
+      .twb-chatbot-send {
+        border: none;
+        background: linear-gradient(135deg, #8a9d4c, #6b7c3a);
+        color: #ffffff;
+        padding: 0 24px;
+        font-size: 20px;
+        cursor: pointer;
+        transition: opacity 0.2s ease-in-out;
+      }
+
+      .twb-chatbot-send:hover {
+        opacity: 0.85;
+      }
+
+      .twb-chatbot-send:focus {
+        outline: none;
+      }
+
+      @media (max-width: 768px) {
+        .twb-chatbot-button {
+          right: 16px;
+          bottom: 16px;
+          width: 56px;
+          height: 56px;
+        }
+
+        .twb-chatbot-box {
+          right: 16px;
+          left: 16px;
+          bottom: 16px;
+          width: auto;
+          height: 60vh;
+          max-height: 60vh;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   const widgetBtn = document.createElement('button');
   widgetBtn.type = 'button';
   widgetBtn.className = 'twb-chatbot-button';
@@ -161,7 +393,13 @@
       }
 
       if (!response.ok) {
-        throw new Error(`Ошибка сервера: ${response.status}`);
+        const errorDetail = data && typeof data.detail === 'string' && data.detail.trim()
+          ? data.detail.trim()
+          : '';
+        const errorMessage = errorDetail
+          ? `Ошибка сервера (${response.status}): ${errorDetail}`
+          : `Ошибка сервера: ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       const answer = data && typeof data.answer === 'string' && data.answer.trim()
@@ -175,13 +413,18 @@
         addMessage(answer, 'agent');
       }
     } catch (error) {
+      const errorMessage =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Ошибка соединения с сервером. Попробуйте позже.';
+
       if (typingBubble) {
-        typingBubble.innerHTML =
-          '<span>Ошибка соединения с сервером. Попробуйте позже.</span>';
+        typingBubble.innerHTML = `<span>${escapeHTML(errorMessage)}</span>`;
         typingBubble.className = 'twb-chatbot-message twb-chatbot-error';
       } else {
-        addMessage('Ошибка соединения с сервером. Попробуйте позже.', 'error');
+        addMessage(errorMessage, 'error');
       }
+
       console.error(error);
     }
   });
