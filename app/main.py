@@ -72,7 +72,7 @@ def health() -> dict:
 
 @app.get("/ready", include_in_schema=False)
 def ready() -> dict:
-    """Проверка готовности зависимостей (не обязательно для 200 на /health)."""
+    """Проверка  готовности зависимостей (не обязательно для 200 на /health)."""
     has_settings = settings is not None
     has_agent = getattr(app.state, "timeweb_agent", None) is not None
     return {"settings": has_settings, "agent": has_agent}
